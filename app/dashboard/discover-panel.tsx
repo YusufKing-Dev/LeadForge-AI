@@ -9,6 +9,7 @@ type Business = {
   category: string;
   address: string | null;
   phone: string | null;
+  email: string | null;
   website_url: string | null;
   has_website: boolean;
 };
@@ -90,6 +91,7 @@ export default function DiscoverPanel() {
         category: b.category,
         address: b.address,
         phone: b.phone,
+        email: b.email,
         website_url: b.website_url,
         has_website: b.has_website,
       };
@@ -250,7 +252,24 @@ export default function DiscoverPanel() {
                       <div style={{ fontSize: "12px", color: "var(--steel-300)" }}>
                         {b.address ?? "No address listed"}
                         {b.phone ? ` · ${b.phone}` : ""}
+                        {b.email ? ` · ${b.email}` : ""}
                       </div>
+                      {!b.phone && !b.email && (
+                        <div style={{ fontSize: "11px", color: "var(--char-500)", marginTop: "2px" }}>
+                          No contact info listed ·{" "}
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                              `${b.business_name} ${b.address ?? ""}`
+                            )}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ color: "var(--ember)", textDecoration: "underline" }}
+                          >
+                            look up on Maps
+                          </a>
+                        </div>
+                      )}
                     </div>
                     <span
                       style={{
