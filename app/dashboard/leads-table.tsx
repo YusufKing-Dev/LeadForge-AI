@@ -9,6 +9,7 @@ type Lead = {
   category: string | null;
   address: string | null;
   phone: string | null;
+  email: string | null;
   website_url: string | null;
   has_website: boolean;
   site_score: number | null;
@@ -202,9 +203,25 @@ export default function LeadsTable({
                 <tr key={lead.id} style={{ borderTop: "1px solid var(--char-800)" }}>
                   <td style={tdStyle}>
                     <div style={{ fontWeight: 600 }}>{lead.business_name}</div>
-                    {lead.phone && (
+                    {(lead.phone || lead.email) ? (
                       <div style={{ fontSize: "12px", color: "var(--steel-300)" }}>
                         {lead.phone}
+                        {lead.phone && lead.email ? " · " : ""}
+                        {lead.email}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: "11px", color: "var(--warn)" }}>
+                        no contact info ·{" "}
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            `${lead.business_name} ${lead.address ?? ""}`
+                          )}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: "var(--ember)", textDecoration: "underline" }}
+                        >
+                          look up on Maps
+                        </a>
                       </div>
                     )}
                   </td>
