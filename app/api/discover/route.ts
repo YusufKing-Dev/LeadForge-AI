@@ -35,14 +35,11 @@ export async function POST(request: NextRequest) {
   }
 
   const categoryCode = CATEGORY_MAP[category] ?? category;
-  const searchRadius = radius ?? 5000; // meters, default 5km
+  const searchRadius = radius ?? 5000;
 
   try {
-    // Step 1: Geocode the location text into coordinates
     const geoRes = await fetch(
-      `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(
-        location
-      )}&limit=1&apiKey=${GEOAPIFY_KEY}`
+      `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(location)}&limit=1&apiKey=${GEOAPIFY_KEY}`
     );
     const geoData = await geoRes.json();
 
@@ -55,7 +52,6 @@ export async function POST(request: NextRequest) {
     }
     const [lon, lat] = coords;
 
-    // Step 2: Search Places API within a radius of that point
     const placesRes = await fetch(
       `https://api.geoapify.com/v2/places?categories=${categoryCode}&filter=circle:${lon},${lat},${searchRadius}&limit=30&apiKey=${GEOAPIFY_KEY}`
     );
@@ -63,26 +59,36 @@ export async function POST(request: NextRequest) {
 
     const businesses = (placesData?.features ?? []).map((f: any) => {
       const p = f.properties;
-      const website =
-        p.website ||
-        p.datasource?.raw?.website ||
-        p.datasource?.raw?.["contact:website"] ||
+      const raw = p.datasource?.raw || {};
+
+      const website = p.website || raw.website || raw["contact:website"] || null;
+
+      const phone =
+        p.contact?.phone ||
+        raw.phone ||
+        raw["contact:phone"] ||
+        raw.mobile ||
+        raw["contact:mobile"] ||
         null;
+
+      const email = raw.email || raw["contact:email"] || null;
+
+      const categories: string[] = p.categories || [];
+      const specific = categories.filter((c) => c.includes(".")).pop();
+      const categoryLabel = specific ? specific.split(".").pop() : category;
 
       return {
         business_name: p.name || "Unnamed business",
-        category: p.categories?.[0]?.split(".").pop() || category,
+        category: categoryLabel || category,
         address: p.formatted || null,
-        phone: p.contact?.phone || p.datasource?.raw?.phone || null,
+        phone,
+        email,
         website_url: website,
         has_website: !!website,
       };
     });
 
-    // Filter out entries with no name (unusable leads)
-    const usable = businesses.filter(
-      (b: any) => b.business_name !== "Unnamed business"
-    );
+    const usable = businesses.filter((b: any) => b.business_name !== "Unnamed business");
 
     return NextResponse.json({ businesses: usable });
   } catch (err) {
