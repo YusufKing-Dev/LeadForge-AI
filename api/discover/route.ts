@@ -35,29 +35,25 @@ export async function POST(request: NextRequest) {
   }
 
   const categoryCode = CATEGORY_MAP[category] ?? category;
-  const searchRadius = radius ?? 5000; // meters, default 5km
+  const searchRadius = radius ?? 5000;
 
   try {
-    // Step 1: Geocode the location text into coordinates
     const geoRes = await fetch(
-      https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(
-        location
-      )}&limit=1&apiKey=${GEOAPIFY_KEY}
+      `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(location)}&limit=1&apiKey=${GEOAPIFY_KEY}`
     );
     const geoData = await geoRes.json();
 
     const coords = geoData?.features?.[0]?.geometry?.coordinates;
     if (!coords) {
       return NextResponse.json(
-        { error: Could not find location: "${location}" },
+        { error: `Could not find location: "${location}"` },
         { status: 404 }
       );
     }
     const [lon, lat] = coords;
 
-    // Step 2: Search Places API within a radius of that point
     const placesRes = await fetch(
-      https://api.geoapify.com/v2/places?categories=${categoryCode}&filter=circle:${lon},${lat},${searchRadius}&limit=30&apiKey=${GEOAPIFY_KEY}
+      `https://api.geoapify.com/v2/places?categories=${categoryCode}&filter=circle:${lon},${lat},${searchRadius}&limit=30&apiKey=${GEOAPIFY_KEY}`
     );
     const placesData = await placesRes.json();
 
@@ -65,11 +61,7 @@ export async function POST(request: NextRequest) {
       const p = f.properties;
       const raw = p.datasource?.raw || {};
 
-      const website =
-        p.website ||
-        raw.website ||
-        raw["contact:website"] ||
-        null;
+      const website = p.website || raw.website || raw["contact:website"] || null;
 
       const phone =
         p.contact?.phone ||
@@ -79,16 +71,11 @@ export async function POST(request: NextRequest) {
         raw["contact:mobile"] ||
         null;
 
-      const email = raw.email  raw["contact:email"]  null;
+      const email = raw.email || raw["contact:email"] || null;
 
-      // Pick the most specific category (last segment), skipping generic top-level ones
       const categories: string[] = p.categories || [];
-      const specific = categories
-        .filter((c) => c.includes("."))
-        .pop();
-      const categoryLabel = specific
-        ? specific.split(".").pop()
-        : category;
+      const specific = categories.filter((c) => c.includes(".")).pop();
+      const categoryLabel = specific ? specific.split(".").pop() : category;
 
       return {
         business_name: p.name || "Unnamed business",
@@ -101,10 +88,7 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    // Filter out entries with no name (unusable leads)
-    const usable = businesses.filter(
-      (b: any) => b.business_name !== "Unnamed business"
-    );
+    const usable = businesses.filter((b: any) => b.business_name !== "Unnamed business");
 
     return NextResponse.json({ businesses: usable });
   } catch (err) {
