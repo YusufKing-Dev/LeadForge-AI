@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase-server";
 import LeadsTable from "./leads-table";
 import SignOutButton from "./sign-out-button";
+import DiscoverPanel from "./discover-panel";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -48,6 +49,8 @@ export default async function DashboardPage() {
             Couldn&apos;t load leads: {error.message}
           </p>
         )}
+
+        <DiscoverPanel />
 
         <LeadsTable initialLeads={leads ?? []} />
       </div>
